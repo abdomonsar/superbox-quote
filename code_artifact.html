@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description" content="حاسبة عروض الأسعار السريعة - شركة سوبر بوكس للمقاولات والإنشاءات | SUPER BOX Quotation Estimator">
+    <title>SUPER BOX | حاسبة عروض الأسعار - سوبر بوكس للمقاولات</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f1f5f9;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            opacity: 1;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8; 
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-amber-500 selection:text-white">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden transition-all duration-300">
+        <div class="bg-slate-900 text-white px-5 py-2.5 rounded-xl shadow-2xl border-r-4 border-amber-500 flex items-center gap-2.5">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-amber-400 text-lg"></i>
+            <span id="toast-msg" class="font-bold text-xs sm:text-sm">تم النسخ بنجاح!</span>
+        </div>
+    </div>
+
+    <!-- Saved Quotes Archive Modal -->
+    <div id="savedQuotesModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200">
+            <div class="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
+                    <h3 id="lblModalTitle" class="font-black text-sm sm:text-base">العروض المحفوظة مؤخراً</h3>
+                </div>
+                <button onclick="toggleSavedQuotesModal()" class="text-slate-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-4 max-h-[60vh] overflow-y-auto space-y-2.5" id="savedQuotesList"></div>
+            <div class="bg-slate-50 px-5 py-3 border-t border-slate-200 flex justify-end">
+                <button onclick="toggleSavedQuotesModal()" id="lblModalClose" class="bg-slate-800 text-white px-4 py-1.5 rounded-lg text-xs font-bold">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Header -->
+    <header class="bg-slate-900 text-white shadow-md border-b-2 border-amber-500 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex flex-wrap justify-between items-center gap-2.5">
+            <!-- Brand & Language Switcher -->
+            <div class="flex items-center justify-between w-full sm:w-auto gap-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center text-slate-950 font-black text-base shadow shrink-0">
+                        SB
+                    </div>
+                    <div>
+                        <h1 id="lblAppTitle" class="text-sm sm:text-base font-black text-white leading-tight">SUPER BOX | حاسبة عروض الأسعار</h1>
+                        <p id="lblAppSub" class="text-[11px] text-slate-400">شركة سوبر بوكس للمقاولات والإنشاءات</p>
+                    </div>
+                </div>
+
+                <!-- System UI Language Switcher (عربي / English Only) -->
+                <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 shrink-0">
+                    <button type="button" id="langBtn_ar" onclick="setUILang('ar')" class="px-2.5 py-1 rounded-lg text-xs font-black transition bg-amber-500 text-slate-950">
+                        🇸🇦 عربي
+                    </button>
+                    <button type="button" id="langBtn_en" onclick="setUILang('en')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white">
+                        🇬🇧 EN
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Actions (Scrollable on small mobile screens) -->
+            <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 no-scrollbar">
+                <button onclick="loadRatioPresetSample()" class="shrink-0 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-percent text-amber-400"></i>
+                    <span id="lblBtnPresetRatio">مثال نسب (أرض 600 / بناء 300)</span>
+                </button>
+                <button onclick="loadMohammedSample()" class="shrink-0 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-ruler-combined text-amber-400"></i>
+                    <span id="lblBtnPresetDirect">مثال مباشر (عرض الأحساء)</span>
+                </button>
+                <button onclick="resetBlankQuote()" class="shrink-0 bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-circle-plus text-amber-400"></i>
+                    <span id="lblBtnNewQuote">عرض جديد</span>
+                </button>
+                <button onclick="saveCurrentQuote()" class="shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span id="lblBtnSave">حفظ</span>
+                </button>
+                <button onclick="toggleSavedQuotesModal()" class="shrink-0 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-folder-open text-amber-400"></i>
+                    <span><span id="lblBtnSaved">المحفوظات</span> (<span id="savedCountBadge">0</span>)</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-2.5 sm:px-4 py-4 sm:py-5 pb-24 lg:pb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-start">
+
+            <!-- RIGHT/LEFT COLUMN: MASTER REFERENCE & FLEXIBLE LINE ITEMS (7 Columns) -->
+            <div class="lg:col-span-7 space-y-4">
+
+                <!-- 1. Master Reference Areas & Price Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
+                    
+                    <!-- Price Selector Row -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                        <span class="text-xs font-black text-slate-700 flex items-center gap-1.5">
+                            <i class="fa-solid fa-tag text-amber-500"></i>
+                            <span id="lblPackagePriceTitle">سعر المتر المربع للبناء:</span>
+                        </span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" id="tierBtn1199" onclick="setBaseRate(1199)" class="px-3.5 py-1.5 rounded-xl border-2 border-amber-500 bg-amber-50 text-slate-900 font-black text-xs transition flex items-center gap-1.5">
+                                <span id="lblRate1199">السعر الرسمي: 1199 ريال</span>
+                            </button>
+                            <button type="button" id="tierBtn999" onclick="setBaseRate(999)" class="px-3.5 py-1.5 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-black text-xs transition flex items-center gap-1.5">
+                                <span id="lblRate999">عرض 999 ريال</span>
+                            </button>
+                            <div class="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200">
+                                <span id="lblCustomRate" class="text-[11px] font-bold text-slate-500">مخصص:</span>
+                                <input type="number" id="customBasePriceInput" value="1199" step="any" oninput="setBaseRate(this.value, true)" class="w-20 bg-white px-2 py-0.5 rounded border border-slate-300 text-xs font-black text-center focus:outline-none focus:border-amber-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Master Land Area & Allocated Build Area -->
+                    <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <span class="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-vector-square text-amber-600"></i>
+                                <span id="lblRefAreasTitle">المساحات المرجعية للمشروع (تُحدث البنود المرتبطة بالنسب % تلقائياً):</span>
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                            <!-- Total Land Area -->
+                            <div class="sm:col-span-5">
+                                <label id="lblTotalLand" class="block text-[11px] font-bold text-slate-700 mb-1">مساحة الأرض الكاملة (م²)</label>
+                                <div class="relative">
+                                    <input type="number" id="totalLandAreaInput" value="600" step="any" oninput="onMasterAreaChange('land')" class="w-full px-3 py-2 bg-white border-2 border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:outline-none focus:border-amber-500">
+                                </div>
+                            </div>
+                            <!-- Allocated Build Area -->
+                            <div class="sm:col-span-7">
+                                <div class="flex flex-wrap justify-between items-center mb-1 gap-1">
+                                    <label id="lblAllocatedBuild" class="text-[11px] font-bold text-amber-900">مساحة البناء المخصصة / المستهدفة (م²)</label>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="setAllocatedFromLand(1)" class="text-[10px] bg-white hover:bg-amber-200 border border-amber-300 text-slate-800 px-1.5 py-0.5 rounded font-bold transition">100%</button>
+                                        <button type="button" onclick="setAllocatedFromLand(0.7)" class="text-[10px] bg-white hover:bg-amber-200 border border-amber-300 text-slate-800 px-1.5 py-0.5 rounded font-bold transition">70%</button>
+                                        <button type="button" onclick="setAllocatedFromLand(0.6)" class="text-[10px] bg-white hover:bg-amber-200 border border-amber-300 text-slate-800 px-1.5 py-0.5 rounded font-bold transition">60%</button>
+                                        <button type="button" onclick="setAllocatedFromLand(0.5)" class="text-[10px] bg-white hover:bg-amber-200 border border-amber-300 text-slate-800 px-1.5 py-0.5 rounded font-bold transition">50%</button>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <input type="number" id="allocatedBuildAreaInput" value="300" step="any" oninput="onMasterAreaChange('allocated')" class="w-full px-3 py-2 bg-white border-2 border-amber-400 rounded-xl text-sm font-black text-slate-900 focus:outline-none focus:border-amber-600">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location, Client & Composition Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1">
+                        <div class="sm:col-span-3">
+                            <label id="lblClientName" class="block text-[11px] font-bold text-slate-500 mb-1">اسم العميل</label>
+                            <input type="text" id="clientName" value="أبو فهد" oninput="renderOutput()" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label id="lblClientCity" class="block text-[11px] font-bold text-slate-500 mb-1">المدينة / المنطقة</label>
+                            <input type="text" id="clientCity" value="الرياض" oninput="renderOutput()" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div class="sm:col-span-6">
+                            <div class="flex justify-between items-center mb-1">
+                                <label id="lblProjectScope" class="text-[11px] font-bold text-slate-500">سطر مكونات المشروع</label>
+                                <button type="button" onclick="autoFillDescription()" class="text-[10px] text-amber-600 hover:text-amber-700 font-bold">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="lblAutoFillScope">توليد تلقائي</span>
+                                </button>
+                            </div>
+                            <input type="text" id="projectScopeDesc" value="يتكون من دور ارضي و دور اول و ملحق علوي و بيت درج" oninput="renderOutput()" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Ultra-Flexible Line Items Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <!-- Card Header -->
+                    <div class="bg-slate-900 text-white px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-amber-400"></i>
+                            <h2 id="lblItemsSectionTitle" class="font-black text-xs sm:text-sm">بنود العرض (كل بند يقبل رقم مباشر أو نسبة %)</h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="clearAllItems()" class="text-[11px] text-slate-300 hover:text-red-400 font-bold px-2 py-1 rounded transition">
+                                <i class="fa-solid fa-trash-can"></i> <span id="lblBtnClearAll">تفريغ البنود</span>
+                            </button>
+                            <button type="button" onclick="addBlankCustomItem()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-3 py-1 rounded-lg text-xs transition flex items-center gap-1 shadow">
+                                <i class="fa-solid fa-plus"></i>
+                                <span id="lblBtnAddCustom">إضافة بند حر (رقم مباشر)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick-Add Chips Bar -->
+                    <div class="p-3 bg-slate-100 border-b border-slate-200">
+                        <div id="lblQuickAddHint" class="text-[11px] font-bold text-slate-600 mb-1.5">
+                            اضغط لإضافة البند فوراً (ويمكنك كتابة المساحة كرقم مباشر أو نسبة %):
+                        </div>
+                        <div id="quickAddChipsContainer" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+
+                    <!-- Rows Container -->
+                    <div id="itemsListContainer" class="p-3 space-y-3"></div>
+
+                    <!-- Add Row Bottom Button -->
+                    <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+                        <button type="button" onclick="addBlankCustomItem()" class="text-xs font-black text-amber-700 hover:text-amber-800 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-plus text-sm"></i>
+                            <span id="lblBtnAddBottom">إضافة سطر بند جديد</span>
+                        </button>
+                        <span class="text-[11px] text-slate-500 font-bold"><span id="lblTotalItemsCount">إجمالي البنود:</span> <strong id="itemsCountBadge" class="text-slate-800">0</strong></span>
+                    </div>
+                </div>
+
+                <!-- 3. Bottom Note Field -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-2">
+                    <label id="lblNoteTitle" class="block text-xs font-black text-slate-700">الملاحظة في نهاية العرض (اتركها فارغة لإخفائها):</label>
+                    <input type="text" id="quoteNoteInput" value="لا يشمل الخزانات سعة الخزانات غير موضحة في المخطط ." oninput="renderOutput()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-500">
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        <button type="button" onclick="setQuickNote('no_tanks')" id="lblNoteNoTank" class="text-[10px] bg-slate-100 hover:bg-amber-100 text-slate-700 px-2 py-1 rounded font-bold transition">لا يشمل الخزانات</button>
+                        <button type="button" onclick="setQuickNote('with_tanks')" id="lblNoteWithTank" class="text-[10px] bg-slate-100 hover:bg-amber-100 text-slate-700 px-2 py-1 rounded font-bold transition">شامل الخزان والبيارة</button>
+                        <button type="button" onclick="setQuickNote('preliminary')" id="lblNotePrelim" class="text-[10px] bg-slate-100 hover:bg-amber-100 text-slate-700 px-2 py-1 rounded font-bold transition">سعر مبدئي بالنسب</button>
+                        <button type="button" onclick="setQuickNote('none')" id="lblNoteClear" class="text-[10px] bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded font-bold transition">بدون ملاحظة</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- OUTPUT COLUMN: READY-TO-PASTE QUOTE TEXT (5 Columns) -->
+            <div class="lg:col-span-5 space-y-4 lg:sticky lg:top-16">
+
+                <!-- Total Summary, VAT Toggle & Copy Buttons -->
+                <div class="bg-slate-900 text-white rounded-2xl shadow-xl overflow-hidden border border-slate-700">
+                    <div class="p-4 text-center border-b border-slate-800 space-y-3">
+                        
+                        <!-- Tax Option Switcher (Without VAT vs With 15% VAT) -->
+                        <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            <button type="button" id="vatBtnOff" onclick="setVatMode(false)" class="py-2 px-2 rounded-lg text-xs font-black transition bg-amber-500 text-slate-950 shadow">
+                                <i class="fa-solid fa-ban mx-1"></i>
+                                <span id="lblVatOffBtn">بدون ضريبة (غير شاملة)</span>
+                            </button>
+                            <button type="button" id="vatBtnOn" onclick="setVatMode(true)" class="py-2 px-2 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white">
+                                <i class="fa-solid fa-receipt mx-1"></i>
+                                <span id="lblVatOnBtn">شامل الضريبة (15%)</span>
+                            </button>
+                        </div>
+
+                        <!-- Main Total Display -->
+                        <div>
+                            <span id="lblGrandTotalTitle" class="text-xs text-slate-400 font-bold block">إجمالي التكلفة (غير شاملة للضريبة)</span>
+                            <div class="text-2xl sm:text-3xl font-black text-amber-400 my-1" dir="ltr">
+                                <span id="grandTotalDisplay">0</span>
+                                <span id="lblCurrencyName" class="text-xs font-bold text-slate-300">SAR</span>
+                            </div>
+                        </div>
+
+                        <!-- VAT Breakdown Box (Shown when VAT is enabled) -->
+                        <div id="vatBreakdownBox" class="hidden bg-slate-800/80 rounded-xl p-2.5 border border-slate-700 text-xs space-y-1">
+                            <div class="flex justify-between items-center text-slate-300">
+                                <span id="lblBeforeVat">المبلغ قبل الضريبة:</span>
+                                <span class="font-bold" dir="ltr"><span id="subTotalBeforeVatDisplay">0</span> SAR</span>
+                            </div>
+                            <div class="flex justify-between items-center text-amber-300">
+                                <span id="lblVatAmount">ضريبة القيمة المضافة (15%):</span>
+                                <span class="font-bold" dir="ltr"><span id="vatAmountDisplay">0</span> SAR</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 bg-slate-950/60 space-y-2">
+                        <button type="button" onclick="copyTemplateText()" class="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 active:scale-[0.99] text-slate-950 font-black rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-xs sm:text-sm">
+                            <i class="fa-solid fa-copy text-base"></i>
+                            <span id="lblBtnCopyAll">نسخ النص بالكامل (للصق في القالب)</span>
+                        </button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" onclick="copyItemsOnly()" class="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold rounded-xl transition flex items-center justify-center gap-1.5 text-xs">
+                                <i class="fa-solid fa-list-check text-amber-400"></i>
+                                <span id="lblBtnCopyItems">نسخ البنود والإجمالي فقط</span>
+                            </button>
+                            <button type="button" onclick="copyForWhatsApp()" class="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-1.5 text-xs">
+                                <i class="fa-brands fa-whatsapp text-sm"></i>
+                                <span id="lblBtnCopyWA">نسخ للواتساب</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Editable Output Textarea -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-800 text-white px-3.5 py-2.5">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-xs font-bold flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-lines text-amber-400"></i>
+                                <span id="lblOutputBoxTitle">نص العرض الجاهز للنسخ (مطابق لقالب الشركة):</span>
+                            </span>
+                            <div class="flex items-center gap-3">
+                                <label class="flex items-center gap-1 text-[11px] text-slate-300 cursor-pointer">
+                                    <input type="checkbox" id="showPercentInText" onchange="renderOutput()" class="accent-amber-500 rounded">
+                                    <span id="lblShowPctInText">ذكر النسب %</span>
+                                </label>
+                                <label class="flex items-center gap-1 text-[11px] text-slate-300 cursor-pointer">
+                                    <input type="checkbox" id="includeHeaderLines" checked onchange="renderOutput()" class="accent-amber-500 rounded">
+                                    <span id="lblShowHeaderInText">الترويسة</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <textarea id="finalQuoteTextarea" rows="13" dir="rtl" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm leading-relaxed font-bold text-slate-900 focus:outline-none focus:border-amber-500"></textarea>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Mobile Sticky Bottom Bar (Quick Total & Copy on Phones) -->
+    <div class="lg:hidden fixed bottom-0 inset-x-0 bg-slate-900/95 backdrop-blur-md text-white border-t border-slate-700 px-3 py-2.5 z-40 flex items-center justify-between gap-2 shadow-2xl">
+        <div>
+            <div id="lblMobileTotalCaption" class="text-[10px] text-slate-400 font-bold">الإجمالي:</div>
+            <div class="text-base font-black text-amber-400 leading-tight" dir="ltr">
+                <span id="mobileStickyTotal">0</span> <span class="text-[10px] text-slate-300">SAR</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <button type="button" onclick="copyTemplateText()" class="bg-amber-500 active:bg-amber-400 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow">
+                <i class="fa-solid fa-copy"></i>
+                <span id="lblMobileCopyBtn">نسخ العرض</span>
+            </button>
+            <button type="button" onclick="copyForWhatsApp()" class="bg-emerald-600 active:bg-emerald-500 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shadow">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Master State
+        let uiLang = 'ar'; // System UI Language: 'ar' | 'en'
+        let includeVat = false; // Tax Calculation Toggle: false = بدون ضريبة, true = شامل الضريبة 15%
+        let baseRate = 1199;
+        let totalLandArea = 600;
+        let allocatedBuildArea = 300;
+
+        // Dictionary for System UI Only (Arabic & English)
+        const I18N = {
+            ar: {
+                dir: 'rtl',
+                appTitle: 'SUPER BOX | حاسبة عروض الأسعار',
+                appSub: 'شركة سوبر بوكس للمقاولات والإنشاءات',
+                presetRatio: 'مثال نسب (أرض 600 / بناء 300)',
+                presetDirect: 'مثال مباشر (عرض الأحساء)',
+                newQuote: 'عرض جديد',
+                save: 'حفظ',
+                saved: 'المحفوظات',
+                packagePriceTitle: 'سعر المتر المربع للبناء:',
+                rate1199: 'السعر الرسمي: 1199 ريال',
+                rate999: 'عرض 999 ريال',
+                customRate: 'مخصص:',
+                refAreasTitle: 'المساحات المرجعية للمشروع (تُحدث البنود المرتبطة بالنسب % تلقائياً):',
+                totalLand: 'مساحة الأرض الكاملة (م²)',
+                allocatedBuild: 'مساحة البناء المخصصة / المستهدفة (م²)',
+                clientName: 'اسم العميل',
+                clientCity: 'المدينة / المنطقة',
+                projectScope: 'سطر مكونات المشروع',
+                autoFillScope: 'توليد تلقائي',
+                itemsSectionTitle: 'بنود العرض (كل بند يقبل رقم مباشر أو نسبة %)',
+                btnClearAll: 'تفريغ البنود',
+                btnAddCustom: 'إضافة بند حر (رقم مباشر)',
+                quickAddHint: 'اضغط لإضافة البند فوراً (ويمكنك كتابة المساحة كرقم مباشر أو نسبة %):',
+                btnAddBottom: 'إضافة سطر بند جديد',
+                totalItemsCount: 'إجمالي البنود:',
+                noteTitle: 'الملاحظة في نهاية العرض (اتركها فارغة لإخفائها):',
+                noteNoTank: 'لا يشمل الخزانات',
+                noteWithTank: 'شامل الخزان والبيارة',
+                notePrelim: 'سعر مبدئي بالنسب',
+                noteClear: 'بدون ملاحظة',
+                vatOffBtn: 'بدون ضريبة (غير شاملة)',
+                vatOnBtn: 'شامل الضريبة (15%)',
+                grandTotalExcl: 'إجمالي التكلفة (غير شاملة للضريبة)',
+                grandTotalIncl: 'الإجمالي النهائي (شامل الضريبة 15%)',
+                beforeVat: 'المبلغ قبل الضريبة:',
+                vatAmount: 'ضريبة القيمة المضافة (15%):',
+                currencyName: 'ريال سعودي',
+                btnCopyAll: 'نسخ النص بالكامل (للصق في القالب)',
+                btnCopyItems: 'نسخ البنود والإجمالي فقط',
+                btnCopyWA: 'نسخ للواتساب',
+                outputBoxTitle: 'نص العرض الجاهز للنسخ (مطابق لقالب الشركة):',
+                showPctInText: 'ذكر النسب %',
+                showHeaderInText: 'الترويسة',
+                modalTitle: 'العروض المحفوظة مؤخراً',
+                modalClose: 'إغلاق',
+                mobileTotalCaptionExcl: 'الإجمالي (بدون ضريبة):',
+                mobileTotalCaptionIncl: 'الإجمالي (شامل الضريبة):',
+                mobileCopyBtn: 'نسخ العرض',
+                // Row labels
+                colItemName: 'اسم البند (يظهر في العرض)',
+                colCalcMethod: 'طريقة الحساب (مباشر أو نسبة %)',
+                colDirectInputLabel: '✍️ الرقم المباشر (المساحة / الكمية)',
+                colResultAreaLabel: 'المساحة المحسوبة (تقبل التعديل)',
+                colUnit: 'الوحدة',
+                colUnitPrice: 'سعر الوحدة',
+                colRowTotal: 'الإجمالي',
+                modeDirect: '✍️ رقم مباشر (إدخال يدوي للمتر/العدد)',
+                modePctAllocated: '📐 % من مساحة البناء المخصصة',
+                modePctFirst: '🏠 % من مساحة الدور الأول',
+                modePctGround: '🏢 % من مساحة الدور الأرضي',
+                modePctLand: '🌍 % من مساحة الأرض الكاملة',
+                modeRemLand: '🌳 المتبقي من الأرض (للحوش)',
+                modePerimLand: '🧱 محيط الأرض التقديري (4×جذر الأرض)',
+                directBadgeHint: 'إدخال رقم مباشر بالمتر أو العدد',
+                unit_m2: 'م2',
+                unit_lm: 'م طولي',
+                unit_pcs: 'عدد',
+                unit_lump: 'مقطوعية'
+            },
+            en: {
+                dir: 'ltr',
+                appTitle: 'SUPER BOX | Quotation Estimator',
+                appSub: 'Super Box Contracting & Construction Co.',
+                presetRatio: 'Ratio Demo (Land 600 / Build 300)',
+                presetDirect: 'Direct Demo (Al-Ahsa Quote)',
+                newQuote: 'New Quote',
+                save: 'Save',
+                saved: 'Saved',
+                packagePriceTitle: 'Package Building Rate (SAR/m²):',
+                rate1199: 'Official: 1199 SAR',
+                rate999: 'Promo: 999 SAR',
+                customRate: 'Custom:',
+                refAreasTitle: 'Reference Project Areas (Auto-updates % linked items):',
+                totalLand: 'Total Land Area (m²)',
+                allocatedBuild: 'Allocated Target Build Area (m²)',
+                clientName: 'Client Name',
+                clientCity: 'City / Region',
+                projectScope: 'Project Scope Line (Arabic)',
+                autoFillScope: 'Auto-Generate',
+                itemsSectionTitle: 'Quotation Line Items (Direct Number Input or % Mode)',
+                btnClearAll: 'Clear All',
+                btnAddCustom: '+ Add Custom Item',
+                quickAddHint: 'Click to quick-add items (supports Direct Number or %):',
+                btnAddBottom: 'Add New Item Row',
+                totalItemsCount: 'Total Items:',
+                noteTitle: 'Footer Note (Leave blank to hide):',
+                noteNoTank: 'Excludes Tanks',
+                noteWithTank: 'Includes Tank & Septic',
+                notePrelim: 'Preliminary Ratio Estimate',
+                noteClear: 'No Note',
+                vatOffBtn: 'Excl. VAT (No Tax)',
+                vatOnBtn: 'Incl. 15% VAT',
+                grandTotalExcl: 'Total Cost (Excluding VAT)',
+                grandTotalIncl: 'Grand Total (Including 15% VAT)',
+                beforeVat: 'Subtotal Before VAT:',
+                vatAmount: 'VAT Amount (15%):',
+                currencyName: 'SAR',
+                btnCopyAll: 'Copy Full Text (For Company Template)',
+                btnCopyItems: 'Copy Items & Total Only',
+                btnCopyWA: 'Copy for WhatsApp',
+                outputBoxTitle: 'Ready-to-Paste Quote Text (Company Template Format):',
+                showPctInText: 'Show %',
+                showHeaderInText: 'Header',
+                modalTitle: 'Saved Quotations',
+                modalClose: 'Close',
+                mobileTotalCaptionExcl: 'Total (Excl. VAT):',
+                mobileTotalCaptionIncl: 'Total (Incl. VAT):',
+                mobileCopyBtn: 'Copy Quote',
+                colItemName: 'Item Name',
+                colCalcMethod: 'Calculation Mode (Direct or %)',
+                colDirectInputLabel: '✍️ Direct Number (Area / Qty)',
+                colResultAreaLabel: 'Calculated Area / Qty (Editable)',
+                colUnit: 'Unit',
+                colUnitPrice: 'Unit Price',
+                colRowTotal: 'Subtotal',
+                modeDirect: '✍️ Direct Number (Manual Area/Qty)',
+                modePctAllocated: '📐 % of Allocated Build Area',
+                modePctFirst: '🏠 % of First Floor Area',
+                modePctGround: '🏢 % of Ground Floor Area',
+                modePctLand: '🌍 % of Total Land Area',
+                modeRemLand: '🌳 Remaining Land (Land - Ground)',
+                modePerimLand: '🧱 Est. Land Perimeter',
+                directBadgeHint: 'Direct manual number input',
+                unit_m2: 'm² (م2)',
+                unit_lm: 'lm (م طولي)',
+                unit_pcs: 'pcs (عدد)',
+                unit_lump: 'Lump Sum (مقطوعية)'
+            }
+        };
+
+        // Standard Item Catalog (Arabic Output Names + English UI Labels)
+        const CATALOG = {
+            ground:   { ar: 'الدور الارضي',   en: 'Ground Floor (الدور الأرضي)',   calcMode: 'pct_allocated', pct: 70,  qty: 210,  unit: 'م2', price: 1199, linkedToBase: true },
+            first:    { ar: 'الدور الاول',    en: 'First Floor (الدور الأول)',     calcMode: 'pct_allocated', pct: 60,  qty: 180,  unit: 'م2', price: 1199, linkedToBase: true },
+            annex:    { ar: 'الملحق العلوي',   en: 'Roof Annex (الملحق العلوي)',    calcMode: 'pct_first',     pct: 50,  qty: 90,   unit: 'م2', price: 1199, linkedToBase: true },
+            stair:    { ar: 'بيت الدرج',      en: 'Staircase (بيت الدرج)',         calcMode: 'direct',        pct: 100, qty: 25,   unit: 'م2', price: 1199, linkedToBase: true },
+            extAnnex: { ar: 'ملحق خارجي',     en: 'External Annex (ملحق خارجي)',   calcMode: 'direct',        pct: 100, qty: 30,   unit: 'م2', price: 1199, linkedToBase: true },
+            parapet:  { ar: 'سترة السطح',     en: 'Roof Parapet (سترة السطح)',     calcMode: 'direct',        pct: 100, qty: 71.4, unit: 'م طولي', price: 200, linkedToBase: false },
+            fence:    { ar: 'الاسوار',        en: 'Fence Walls (الأسوار)',         calcMode: 'direct',        pct: 100, qty: 90,   unit: 'م طولي', price: 500, linkedToBase: false },
+            yard:     { ar: 'الحوش',          en: 'Courtyard (الحوش)',             calcMode: 'rem_land',      pct: 100, qty: 390,  unit: 'م2', price: 150, linkedToBase: false },
+            doors:    { ar: 'الأبواب',        en: 'Fence Doors (الأبواب)',         calcMode: 'direct',        pct: 100, qty: 2,    unit: 'عدد', price: 3000, linkedToBase: false },
+            garage:   { ar: 'باب كراج',       en: 'Garage Door (باب كراج)',        calcMode: 'direct',        pct: 100, qty: 1,    unit: 'عدد', price: 6000, linkedToBase: false },
+            tank:     { ar: 'الخزان الارضي',  en: 'Water Tank (الخزان الأرضي)',    calcMode: 'direct',        pct: 100, qty: 1,    unit: 'مقطوعية', price: 25000, linkedToBase: false },
+            septic:   { ar: 'البيارة',        en: 'Septic Tank (البيارة)',         calcMode: 'direct',        pct: 100, qty: 1,    unit: 'مقطوعية', price: 10000, linkedToBase: false }
+        };
+
+        const NOTES_DICT = {
+            no_tanks: 'لا يشمل الخزانات سعة الخزانات غير موضحة في المخطط .',
+            with_tanks: 'السعر يشمل الخزان الأرضي والبيارة .',
+            preliminary: 'السعر مبدئي وتقديري بناءً على النسب الهندسية لحين اعتماد المخطط .',
+            none: ''
+        };
+
+        let items = [
+            { id: 1, key: 'ground',  name: 'الدور الارضي',  calcMode: 'pct_allocated', pct: 70,  qty: 210, unit: 'م2', price: 1199, linkedToBase: true },
+            { id: 2, key: 'first',   name: 'الدور الاول',   calcMode: 'pct_allocated', pct: 60,  qty: 180, unit: 'م2', price: 1199, linkedToBase: true },
+            { id: 3, key: 'annex',   name: 'الملحق العلوي',  calcMode: 'pct_first',     pct: 50,  qty: 90,  unit: 'م2', price: 1199, linkedToBase: true },
+            { id: 4, key: 'stair',   name: 'بيت الدرج',     calcMode: 'direct',        pct: 100, qty: 25,  unit: 'م2', price: 1199, linkedToBase: true },
+            { id: 5, key: 'parapet', name: 'سترة السطح',    calcMode: 'direct',        pct: 100, qty: 55,  unit: 'م طولي', price: 200, linkedToBase: false },
+            { id: 6, key: 'fence',   name: 'الاسوار',       calcMode: 'direct',        pct: 100, qty: 95,  unit: 'م طولي', price: 500, linkedToBase: false },
+            { id: 7, key: 'yard',    name: 'الحوش',         calcMode: 'rem_land',      pct: 100, qty: 390, unit: 'م2', price: 150, linkedToBase: false },
+            { id: 8, key: 'doors',   name: 'الأبواب',       calcMode: 'direct',        pct: 100, qty: 2,   unit: 'عدد', price: 3000, linkedToBase: false },
+            { id: 9, key: 'garage',  name: 'باب كراج',      calcMode: 'direct',        pct: 100, qty: 1,   unit: 'عدد', price: 6000, linkedToBase: false }
+        ];
+
+        window.onload = function() {
+            updateSavedCountBadge();
+            recalculateDependentQuantities();
+            applyUILanguage();
+        };
+
+        // Switch System UI Language ('ar' | 'en')
+        function setUILang(lang) {
+            uiLang = lang;
+            applyUILanguage();
+        }
+
+        // Toggle Tax Calculation Mode (false = Excl. VAT, true = Incl. 15% VAT)
+        function setVatMode(enabled) {
+            includeVat = Boolean(enabled);
+            const btnOff = document.getElementById('vatBtnOff');
+            const btnOn = document.getElementById('vatBtnOn');
+            const breakdownBox = document.getElementById('vatBreakdownBox');
+
+            if (includeVat) {
+                btnOn.className = 'py-2 px-2 rounded-lg text-xs font-black transition bg-amber-500 text-slate-950 shadow';
+                btnOff.className = 'py-2 px-2 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white';
+                breakdownBox.classList.remove('hidden');
+            } else {
+                btnOff.className = 'py-2 px-2 rounded-lg text-xs font-black transition bg-amber-500 text-slate-950 shadow';
+                btnOn.className = 'py-2 px-2 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white';
+                breakdownBox.classList.add('hidden');
+            }
+            renderOutput();
+        }
+
+        function applyUILanguage() {
+            const t = I18N[uiLang];
+            document.documentElement.dir = t.dir;
+            document.documentElement.lang = uiLang;
+
+            // Update language switcher button styles
+            ['ar', 'en'].forEach(l => {
+                const btn = document.getElementById('langBtn_' + l);
+                if (!btn) return;
+                if (l === uiLang) {
+                    btn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition bg-amber-500 text-slate-950 shadow';
+                } else {
+                    btn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white';
+                }
+            });
+
+            // Map static labels
+            const map = {
+                lblAppTitle: t.appTitle,
+                lblAppSub: t.appSub,
+                lblBtnPresetRatio: t.presetRatio,
+                lblBtnPresetDirect: t.presetDirect,
+                lblBtnNewQuote: t.newQuote,
+                lblBtnSave: t.save,
+                lblBtnSaved: t.saved,
+                lblPackagePriceTitle: t.packagePriceTitle,
+                lblRate1199: t.rate1199,
+                lblRate999: t.rate999,
+                lblCustomRate: t.customRate,
+                lblRefAreasTitle: t.refAreasTitle,
+                lblTotalLand: t.totalLand,
+                lblAllocatedBuild: t.allocatedBuild,
+                lblClientName: t.clientName,
+                lblClientCity: t.clientCity,
+                lblProjectScope: t.projectScope,
+                lblAutoFillScope: t.autoFillScope,
+                lblItemsSectionTitle: t.itemsSectionTitle,
+                lblBtnClearAll: t.btnClearAll,
+                lblBtnAddCustom: t.btnAddCustom,
+                lblQuickAddHint: t.quickAddHint,
+                lblBtnAddBottom: t.btnAddBottom,
+                lblTotalItemsCount: t.totalItemsCount,
+                lblNoteTitle: t.noteTitle,
+                lblNoteNoTank: t.noteNoTank,
+                lblNoteWithTank: t.noteWithTank,
+                lblNotePrelim: t.notePrelim,
+                lblNoteClear: t.noteClear,
+                lblVatOffBtn: t.vatOffBtn,
+                lblVatOnBtn: t.vatOnBtn,
+                lblBeforeVat: t.beforeVat,
+                lblVatAmount: t.vatAmount,
+                lblCurrencyName: t.currencyName,
+                lblBtnCopyAll: t.btnCopyAll,
+                lblBtnCopyItems: t.btnCopyItems,
+                lblBtnCopyWA: t.btnCopyWA,
+                lblOutputBoxTitle: t.outputBoxTitle,
+                lblShowPctInText: t.showPctInText,
+                lblShowHeaderInText: t.showHeaderInText,
+                lblModalTitle: t.modalTitle,
+                lblModalClose: t.modalClose,
+                lblMobileCopyBtn: t.mobileCopyBtn
+            };
+
+            Object.keys(map).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = map[id];
+            });
+
+            renderQuickAddChips();
+            renderItemsList();
+            renderOutput();
+        }
+
+        function renderQuickAddChips() {
+            const container = document.getElementById('quickAddChipsContainer');
+            if (!container) return;
+            const keys = ['ground', 'first', 'annex', 'stair', 'extAnnex', 'parapet', 'fence', 'yard', 'doors', 'garage', 'tank', 'septic'];
+            container.innerHTML = keys.map(k => {
+                const item = CATALOG[k];
+                const label = item[uiLang];
+                const isFloor = item.linkedToBase;
+                return `
+                    <button type="button" onclick="addCatalogItem('${k}')" class="${isFloor ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-slate-900 font-black' : 'bg-white hover:bg-amber-50 border-slate-300 text-slate-800 font-bold'} border px-2.5 py-1.5 rounded-lg text-xs transition shadow-sm active:scale-95">
+                        + ${label}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function addCatalogItem(key) {
+            const c = CATALOG[key];
+            if (!c) return;
+            const newItem = {
+                id: Date.now() + Math.random(),
+                key: key,
+                name: c.ar,
+                calcMode: c.calcMode,
+                pct: c.pct,
+                qty: c.qty,
+                unit: c.unit,
+                price: c.linkedToBase ? baseRate : c.price,
+                linkedToBase: c.linkedToBase
+            };
+            items.push(newItem);
+            recalculateDependentQuantities();
+            renderItemsList();
+            renderOutput();
+
+            setTimeout(() => {
+                const lastIdx = items.length - 1;
+                const qtyInput = document.getElementById(`qty-input-${lastIdx}`);
+                if (qtyInput) {
+                    qtyInput.focus();
+                    qtyInput.select();
+                }
+            }, 40);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2600);
+        }
+
+        function formatNum(num) {
+            const n = Number(num) || 0;
+            const isInt = Math.abs(n - Math.round(n)) < 0.001;
+            if (isInt) return Math.round(n).toLocaleString('en-US');
+            return n.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+        }
+
+        function round2(n) {
+            return Math.round((Number(n) || 0) * 100) / 100;
+        }
+
+        function getGroundFloorArea() {
+            const gf = items.find(i => i.key === 'ground' || i.name.includes('الارضي') || i.name.includes('الأرضي') || i.name.toLowerCase().includes('ground'));
+            return gf ? (parseFloat(gf.qty) || 0) : 0;
+        }
+
+        function getFirstFloorArea() {
+            const ff = items.find(i => i.key === 'first' || i.name.includes('الاول') || i.name.includes('الأول') || i.name.toLowerCase().includes('first'));
+            return ff ? (parseFloat(ff.qty) || 0) : 0;
+        }
+
+        // Recalculate rows that use percentage or remaining land
+        function recalculateDependentQuantities() {
+            totalLandArea = parseFloat(document.getElementById('totalLandAreaInput').value) || 0;
+            allocatedBuildArea = parseFloat(document.getElementById('allocatedBuildAreaInput').value) || 0;
+
+            for (let pass = 0; pass < 2; pass++) {
+                const currentGround = getGroundFloorArea();
+                const currentFirst = getFirstFloorArea();
+
+                items.forEach(item => {
+                    const pctRatio = (parseFloat(item.pct) || 0) / 100;
+                    if (item.calcMode === 'pct_allocated') {
+                        item.qty = round2(allocatedBuildArea * pctRatio);
+                    } else if (item.calcMode === 'pct_land') {
+                        item.qty = round2(totalLandArea * pctRatio);
+                    } else if (item.calcMode === 'pct_ground') {
+                        item.qty = round2(currentGround * pctRatio);
+                    } else if (item.calcMode === 'pct_first') {
+                        item.qty = round2(currentFirst * pctRatio);
+                    } else if (item.calcMode === 'rem_land') {
+                        item.qty = round2(Math.max(0, totalLandArea - currentGround));
+                    } else if (item.calcMode === 'perimeter_land') {
+                        item.qty = totalLandArea > 0 ? round2(Math.sqrt(totalLandArea) * 4) : 0;
+                    }
+                    // When calcMode === 'direct', item.qty stays 100% untouched as entered by the user!
+                });
+            }
+        }
+
+        function onMasterAreaChange() {
+            recalculateDependentQuantities();
+            updateRenderedRowValuesWithoutRebuildingDOM();
+            renderOutput();
+        }
+
+        function setAllocatedFromLand(ratio) {
+            const land = parseFloat(document.getElementById('totalLandAreaInput').value) || 0;
+            document.getElementById('allocatedBuildAreaInput').value = round2(land * ratio);
+            onMasterAreaChange();
+        }
+
+        function updateRenderedRowValuesWithoutRebuildingDOM() {
+            items.forEach((item, idx) => {
+                const qtyInput = document.getElementById(`qty-input-${idx}`);
+                if (qtyInput && document.activeElement !== qtyInput) {
+                    qtyInput.value = item.qty;
+                }
+                const sub = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
+                const subEl = document.getElementById(`row-sub-${idx}`);
+                if (subEl) subEl.innerText = formatNum(sub);
+                const refHintEl = document.getElementById(`row-ref-hint-${idx}`);
+                if (refHintEl) refHintEl.innerText = getModeExplanationText(item);
+            });
+        }
+
+        function getModeExplanationText(item) {
+            const t = I18N[uiLang];
+            if (item.calcMode === 'pct_allocated') {
+                return `${item.pct}% × ${allocatedBuildArea} = ${item.qty}`;
+            } else if (item.calcMode === 'pct_first') {
+                const ff = getFirstFloorArea();
+                return `${item.pct}% × ${ff} = ${item.qty}`;
+            } else if (item.calcMode === 'pct_ground') {
+                const gf = getGroundFloorArea();
+                return `${item.pct}% × ${gf} = ${item.qty}`;
+            } else if (item.calcMode === 'pct_land') {
+                return `${item.pct}% × ${totalLandArea} = ${item.qty}`;
+            } else if (item.calcMode === 'rem_land') {
+                const gf = getGroundFloorArea();
+                return `${totalLandArea} - ${gf} = ${item.qty}`;
+            } else if (item.calcMode === 'perimeter_land') {
+                return `4 × √${totalLandArea} = ${item.qty}`;
+            }
+            return t.directBadgeHint;
+        }
+
+        function setBaseRate(rate, isCustomInput = false) {
+            baseRate = parseFloat(rate) || 0;
+            if (!isCustomInput) {
+                document.getElementById('customBasePriceInput').value = baseRate;
+            }
+
+            const btn1199 = document.getElementById('tierBtn1199');
+            const btn999 = document.getElementById('tierBtn999');
+
+            if (baseRate === 1199) {
+                btn1199.className = 'px-3.5 py-1.5 rounded-xl border-2 border-amber-500 bg-amber-50 text-slate-900 font-black text-xs transition flex items-center gap-1.5';
+                btn999.className = 'px-3.5 py-1.5 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-black text-xs transition flex items-center gap-1.5';
+            } else if (baseRate === 999) {
+                btn999.className = 'px-3.5 py-1.5 rounded-xl border-2 border-amber-500 bg-amber-50 text-slate-900 font-black text-xs transition flex items-center gap-1.5';
+                btn1199.className = 'px-3.5 py-1.5 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-black text-xs transition flex items-center gap-1.5';
+            } else {
+                btn1199.className = 'px-3.5 py-1.5 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-black text-xs transition flex items-center gap-1.5';
+                btn999.className = 'px-3.5 py-1.5 rounded-xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-black text-xs transition flex items-center gap-1.5';
+            }
+
+            items.forEach(item => {
+                if (item.linkedToBase) {
+                    item.price = baseRate;
+                }
+            });
+
+            renderItemsList();
+            renderOutput();
+        }
+
+        // Render Dynamic Items List with a PROMINENT, DEDICATED Direct Number Input Box on every row
+        function renderItemsList() {
+            const container = document.getElementById('itemsListContainer');
+            const t = I18N[uiLang];
+            document.getElementById('itemsCountBadge').innerText = items.length;
+
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-xs font-bold text-slate-500">
+                        ${uiLang === 'zh' ? '暂无项目，请点击上方按钮添加' : (uiLang === 'en' ? 'No items yet — click any button above to add' : 'القائمة فارغة — اضغط على أي بند من الأزرار أعلاه لإضافته فوراً')}
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = items.map((item, idx) => {
+                const isPctMode = item.calcMode.startsWith('pct_');
+                const isDirectMode = item.calcMode === 'direct';
+                const subTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
+
+                return `
+                <div class="p-3 sm:p-3.5 rounded-2xl border-2 ${isDirectMode ? 'border-emerald-300 bg-emerald-50/20' : 'border-amber-300 bg-amber-50/20'} space-y-2.5 transition shadow-sm">
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                        <!-- 1. Item Name (3 cols) -->
+                        <div class="sm:col-span-3">
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">${t.colItemName}</label>
+                            <input type="text" id="name-input-${idx}" value="${item.name}" oninput="updateItemName(${idx}, this.value)" class="w-full px-3 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:border-amber-500">
+                        </div>
+
+                        <!-- 2. Calculation Mode Dropdown + Optional % Input (4 cols) -->
+                        <div class="sm:col-span-4">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-[11px] font-bold text-slate-600">${t.colCalcMethod}</label>
+                                ${isPctMode ? `
+                                <div class="flex gap-1">
+                                    <button type="button" onclick="setQuickPct(${idx}, 70)" class="text-[10px] px-1.5 py-0.5 rounded ${item.pct == 70 ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-200 text-slate-700 font-bold'}">70%</button>
+                                    <button type="button" onclick="setQuickPct(${idx}, 65)" class="text-[10px] px-1.5 py-0.5 rounded ${item.pct == 65 ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-200 text-slate-700 font-bold'}">65%</button>
+                                    <button type="button" onclick="setQuickPct(${idx}, 60)" class="text-[10px] px-1.5 py-0.5 rounded ${item.pct == 60 ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-200 text-slate-700 font-bold'}">60%</button>
+                                    <button type="button" onclick="setQuickPct(${idx}, 50)" class="text-[10px] px-1.5 py-0.5 rounded ${item.pct == 50 ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-200 text-slate-700 font-bold'}">50%</button>
+                                </div>
+                                ` : ''}
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <select onchange="changeItemCalcMode(${idx}, this.value)" class="w-full px-2.5 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500">
+                                    <option value="direct" ${item.calcMode === 'direct' ? 'selected' : ''}>${t.modeDirect}</option>
+                                    <option value="pct_allocated" ${item.calcMode === 'pct_allocated' ? 'selected' : ''}>${t.modePctAllocated}</option>
+                                    <option value="pct_first" ${item.calcMode === 'pct_first' ? 'selected' : ''}>${t.modePctFirst}</option>
+                                    <option value="pct_ground" ${item.calcMode === 'pct_ground' ? 'selected' : ''}>${t.modePctGround}</option>
+                                    <option value="pct_land" ${item.calcMode === 'pct_land' ? 'selected' : ''}>${t.modePctLand}</option>
+                                    <option value="rem_land" ${item.calcMode === 'rem_land' ? 'selected' : ''}>${t.modeRemLand}</option>
+                                    <option value="perimeter_land" ${item.calcMode === 'perimeter_land' ? 'selected' : ''}>${t.modePerimLand}</option>
+                                </select>
+                                ${isPctMode ? `
+                                <div class="relative w-24 shrink-0">
+                                    <input type="number" step="any" value="${item.pct}" oninput="updateItemPct(${idx}, this.value)" class="w-full px-2 py-2 bg-amber-100 border-2 border-amber-500 rounded-xl text-sm font-black text-slate-900 text-center focus:outline-none">
+                                    <span class="absolute left-1.5 top-2 text-xs font-black text-amber-800">%</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- 3. PROMINENT DIRECT NUMBER / AREA / QTY INPUT + UNIT (3 cols) -->
+                        <div class="sm:col-span-3">
+                            <label class="block text-[11px] font-black ${isDirectMode ? 'text-emerald-800' : 'text-amber-900'} mb-1">
+                                ${isDirectMode ? t.colDirectInputLabel : t.colResultAreaLabel}
+                            </label>
+                            <div class="flex items-center gap-1">
+                                <input
+                                    type="number"
+                                    step="any"
+                                    id="qty-input-${idx}"
+                                    value="${item.qty}"
+                                    placeholder="0"
+                                    onfocus="this.select()"
+                                    oninput="onManualQtyEdit(${idx}, this.value)"
+                                    class="w-full px-3 py-2 bg-white border-2 ${isDirectMode ? 'border-emerald-500 ring-2 ring-emerald-200/70' : 'border-amber-400'} rounded-xl text-sm font-black text-slate-950 text-center focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-200"
+                                >
+                                <select onchange="updateItemUnit(${idx}, this.value)" class="px-2 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none">
+                                    <option value="م2" ${item.unit === 'م2' ? 'selected' : ''}>${t.unit_m2}</option>
+                                    <option value="م طولي" ${item.unit === 'م طولي' ? 'selected' : ''}>${t.unit_lm}</option>
+                                    <option value="عدد" ${item.unit === 'عدد' ? 'selected' : ''}>${t.unit_pcs}</option>
+                                    <option value="مقطوعية" ${item.unit === 'مقطوعية' ? 'selected' : ''}>${t.unit_lump}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 4. Unit Price (2 cols) -->
+                        <div class="sm:col-span-2">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-[11px] font-bold text-slate-600">${t.colUnitPrice}</label>
+                                <button type="button" onclick="linkItemToBaseRate(${idx})" class="text-[10px] ${item.linkedToBase ? 'text-amber-600 font-black' : 'text-slate-400'}" title="Link/Unlink Package Price">
+                                    <i class="fa-solid fa-link"></i> ${item.linkedToBase ? baseRate : ''}
+                                </button>
+                            </div>
+                            <input type="number" step="any" value="${item.price}" onfocus="this.select()" oninput="updateItemPrice(${idx}, this.value)" class="w-full px-2.5 py-2 bg-white border-2 border-slate-300 rounded-xl text-sm font-black text-slate-900 text-center focus:outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+
+                    <!-- Bottom Row Bar: Formula Explanation + Subtotal + Actions -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-200/70 text-xs">
+                        <span id="row-ref-hint-${idx}" class="text-[11px] font-bold ${isDirectMode ? 'text-emerald-700' : 'text-amber-800'}">
+                            ${getModeExplanationText(item)}
+                        </span>
+
+                        <div class="flex items-center gap-3">
+                            <div class="text-sm font-black text-slate-900">
+                                <span class="text-[11px] text-slate-500 font-bold">${t.colRowTotal}:</span>
+                                <span id="row-sub-${idx}" class="text-amber-700 mx-1">${formatNum(subTotal)}</span>
+                                <span class="text-[10px] text-slate-500">SAR</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button type="button" onclick="moveRow(${idx}, -1)" class="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center"><i class="fa-solid fa-caret-up"></i></button>
+                                <button type="button" onclick="moveRow(${idx}, 1)" class="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center"><i class="fa-solid fa-caret-down"></i></button>
+                                <button type="button" onclick="deleteRow(${idx})" class="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center"><i class="fa-solid fa-trash-can text-[11px]"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                `;
+            }).join('');
+        }
+
+        function updateItemName(idx, val) {
+            if (!items[idx]) return;
+            items[idx].name = val;
+            items[idx].key = null; // Custom edited name
+            recalculateDependentQuantities();
+            updateRenderedRowValuesWithoutRebuildingDOM();
+            renderOutput();
+        }
+
+        // When user switches to 'direct' (رقم مباشر), immediately focus & select the Quantity Input box!
+        function changeItemCalcMode(idx, newMode) {
+            if (!items[idx]) return;
+            items[idx].calcMode = newMode;
+            if (newMode === 'pct_allocated' && (!items[idx].pct || items[idx].pct === 100)) {
+                items[idx].pct = items[idx].key === 'ground' ? 70 : 60;
+            } else if (newMode === 'pct_first' && (!items[idx].pct || items[idx].pct === 100)) {
+                items[idx].pct = 50;
+            }
+            recalculateDependentQuantities();
+            renderItemsList();
+            renderOutput();
+
+            if (newMode === 'direct') {
+                setTimeout(() => {
+                    const qtyInput = document.getElementById(`qty-input-${idx}`);
+                    if (qtyInput) {
+                        qtyInput.focus();
+                        qtyInput.select();
+                    }
+                }, 30);
+            }
+        }
+
+        function updateItemPct(idx, pctVal) {
+            if (!items[idx]) return;
+            items[idx].pct = parseFloat(pctVal) || 0;
+            recalculateDependentQuantities();
+            updateRenderedRowValuesWithoutRebuildingDOM();
+            renderOutput();
+        }
+
+        function setQuickPct(idx, pctVal) {
+            if (!items[idx]) return;
+            items[idx].pct = pctVal;
+            recalculateDependentQuantities();
+            renderItemsList();
+            renderOutput();
+        }
+
+        // Typing directly into the Area/Quantity box works smoothly without rebuilding the DOM or losing cursor focus
+        function onManualQtyEdit(idx, rawVal) {
+            if (!items[idx]) return;
+            items[idx].qty = parseFloat(rawVal) || 0;
+            items[idx].calcMode = 'direct';
+            recalculateDependentQuantities();
+            updateRenderedRowValuesWithoutRebuildingDOM();
+            renderOutput();
+        }
+
+        function updateItemUnit(idx, unitVal) {
+            if (!items[idx]) return;
+            items[idx].unit = unitVal;
+            renderOutput();
+        }
+
+        function updateItemPrice(idx, priceVal) {
+            if (!items[idx]) return;
+            items[idx].price = parseFloat(priceVal) || 0;
+            items[idx].linkedToBase = false;
+            updateRenderedRowValuesWithoutRebuildingDOM();
+            renderOutput();
+        }
+
+        function linkItemToBaseRate(idx) {
+            if (!items[idx]) return;
+            items[idx].linkedToBase = !items[idx].linkedToBase;
+            if (items[idx].linkedToBase) {
+                items[idx].price = baseRate;
+            }
+            renderItemsList();
+            renderOutput();
+        }
+
+        function addBlankCustomItem() {
+            items.push({
+                id: Date.now() + Math.random(),
+                key: null,
+                name: 'بند إضافي',
+                calcMode: 'direct',
+                pct: 100,
+                qty: 1,
+                unit: 'م2',
+                price: baseRate,
+                linkedToBase: false
+            });
+            renderItemsList();
+            renderOutput();
+
+            setTimeout(() => {
+                const lastIdx = items.length - 1;
+                const qtyInput = document.getElementById(`qty-input-${lastIdx}`);
+                if (qtyInput) {
+                    qtyInput.focus();
+                    qtyInput.select();
+                }
+            }, 40);
+        }
+
+        function deleteRow(idx) {
+            items.splice(idx, 1);
+            recalculateDependentQuantities();
+            renderItemsList();
+            renderOutput();
+        }
+
+        function moveRow(idx, dir) {
+            const target = idx + dir;
+            if (target < 0 || target >= items.length) return;
+            const temp = items[idx];
+            items[idx] = items[target];
+            items[target] = temp;
+            renderItemsList();
+            renderOutput();
+        }
+
+        function clearAllItems() {
+            items = [];
+            renderItemsList();
+            renderOutput();
+        }
+
+        function autoFillDescription() {
+            const floorItems = items.filter(i => i.unit === 'م2' && i.key !== 'yard' && !i.name.includes('حوش') && !i.name.includes('الحوش') && i.name.trim() !== '');
+            if (floorItems.length > 0) {
+                const names = floorItems.map(i => (i.key && CATALOG[i.key] ? CATALOG[i.key].ar : i.name).replace('الدور ', 'دور '));
+                document.getElementById('projectScopeDesc').value = 'يتكون من ' + names.join(' و ');
+            }
+            renderOutput();
+        }
+
+        function setQuickNote(noteKey) {
+            document.getElementById('quoteNoteInput').value = NOTES_DICT[noteKey] ?? '';
+            renderOutput();
+        }
+
+        // Format a single item line in Super Box Arabic Official Template Format
+        function formatSingleItemLine(item) {
+            const showPct = document.getElementById('showPercentInText') && document.getElementById('showPercentInText').checked;
+            const qty = parseFloat(item.qty) || 0;
+            const price = parseFloat(item.price) || 0;
+            const total = qty * price;
+
+            const qtyText = String(qty);
+            const priceText = formatNum(price);
+            const totalText = formatNum(total);
+
+            let name = (item.key && CATALOG[item.key]) ? CATALOG[item.key].ar : (item.name || 'بند').trim();
+            if (showPct && item.calcMode.startsWith('pct_')) {
+                name += ` (${item.pct}%)`;
+            }
+
+            if (item.unit === 'عدد') {
+                return `${name} ${qtyText} × ${priceText} ريال = ${totalText} ريال سعودي`;
+            } else if (item.unit === 'مقطوعية') {
+                return `${name} ${totalText} ريال سعودي`;
+            } else {
+                return `${name} ${qtyText} ${item.unit} × ${priceText} ريال = ${totalText} ريال سعودي`;
+            }
+        }
+
+        // Render Output Text Block (Always in Official Super Box Template Format, with or without VAT)
+        function renderOutput() {
+            const t = I18N[uiLang];
+            const city = document.getElementById('clientCity').value.trim();
+            const scopeDesc = document.getElementById('projectScopeDesc').value.trim();
+            const note = document.getElementById('quoteNoteInput').value.trim();
+            const showHeaders = document.getElementById('includeHeaderLines').checked;
+
+            const subTotalBeforeVat = items.reduce((sum, item) => {
+                return sum + ((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0));
+            }, 0);
+            const vatAmount = subTotalBeforeVat * 0.15;
+            const totalWithVat = subTotalBeforeVat + vatAmount;
+
+            const displayedGrandTotal = includeVat ? totalWithVat : subTotalBeforeVat;
+
+            // Update Displays
+            document.getElementById('lblGrandTotalTitle').innerText = includeVat ? t.grandTotalIncl : t.grandTotalExcl;
+            document.getElementById('grandTotalDisplay').innerText = formatNum(displayedGrandTotal);
+            document.getElementById('subTotalBeforeVatDisplay').innerText = formatNum(subTotalBeforeVat);
+            document.getElementById('vatAmountDisplay').innerText = formatNum(vatAmount);
+
+            // Update Mobile Sticky Footer
+            const mobCaption = document.getElementById('lblMobileTotalCaption');
+            const mobTotal = document.getElementById('mobileStickyTotal');
+            if (mobCaption) mobCaption.innerText = includeVat ? t.mobileTotalCaptionIncl : t.mobileTotalCaptionExcl;
+            if (mobTotal) mobTotal.innerText = formatNum(displayedGrandTotal);
+
+            // Build Quotation Lines
+            let lines = [];
+            if (showHeaders) {
+                lines.push(`عرض سعر مبدئي`);
+                lines.push(`سعر البناء ${baseRate} ريال سعودي للمتر المربع`);
+                if (city) lines.push(city);
+            }
+            if (scopeDesc) lines.push(scopeDesc);
+
+            items.forEach(item => {
+                if ((parseFloat(item.qty) || 0) > 0 || item.name.trim() !== '') {
+                    lines.push(formatSingleItemLine(item));
+                }
+            });
+
+            if (includeVat) {
+                lines.push(`اجمالي التكلفة قبل الضريبة : ${formatNum(subTotalBeforeVat)} ريال سعودي .`);
+                lines.push(`ضريبة القيمة المضافة (15%) : ${formatNum(vatAmount)} ريال سعودي .`);
+                lines.push(`الاجمالي النهائي شامل الضريبة : ${formatNum(totalWithVat)} ريال سعودي .`);
+            } else {
+                lines.push(`اجمالي التكلفة : ${formatNum(subTotalBeforeVat)} ريال سعودي غير شاملة للضريبة .`);
+            }
+
+            if (note) lines.push(`ملاحظة : ${note}`);
+
+            document.getElementById('finalQuoteTextarea').value = lines.join('\n');
+        }
+
+        function copyTemplateText() {
+            const textarea = document.getElementById('finalQuoteTextarea');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            showToast(uiLang === 'en' ? 'Full quotation text copied!' : 'تم نسخ نص العرض بالكامل! جاهز للصق في القالب.');
+        }
+
+        function copyItemsOnly() {
+            const scopeDesc = document.getElementById('projectScopeDesc').value.trim();
+            const note = document.getElementById('quoteNoteInput').value.trim();
+            const subTotalBeforeVat = items.reduce((sum, i) => sum + ((parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0)), 0);
+            const vatAmount = subTotalBeforeVat * 0.15;
+            const totalWithVat = subTotalBeforeVat + vatAmount;
+
+            let lines = [];
+            if (scopeDesc) lines.push(scopeDesc);
+            items.forEach(item => lines.push(formatSingleItemLine(item)));
+
+            if (includeVat) {
+                lines.push(`اجمالي التكلفة قبل الضريبة : ${formatNum(subTotalBeforeVat)} ريال سعودي .`);
+                lines.push(`ضريبة القيمة المضافة (15%) : ${formatNum(vatAmount)} ريال سعودي .`);
+                lines.push(`الاجمالي النهائي شامل الضريبة : ${formatNum(totalWithVat)} ريال سعودي .`);
+            } else {
+                lines.push(`اجمالي التكلفة : ${formatNum(subTotalBeforeVat)} ريال سعودي غير شاملة للضريبة .`);
+            }
+
+            if (note) lines.push(`ملاحظة : ${note}`);
+
+            const temp = document.createElement('textarea');
+            temp.value = lines.join('\n');
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast(uiLang === 'en' ? 'Items and total copied!' : 'تم نسخ البنود والإجمالي فقط!');
+        }
+
+        function copyForWhatsApp() {
+            const clientName = document.getElementById('clientName').value.trim();
+            const text = document.getElementById('finalQuoteTextarea').value;
+            const header = `*SUPER BOX | شركة سوبر بوكس للمقاولات*\n${clientName ? `*العميل: ${clientName}*\n` : ''}━━━━━━━━━━━━━━\n`;
+            const temp = document.createElement('textarea');
+            temp.value = header + text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast(uiLang === 'en' ? 'Copied for WhatsApp!' : 'تم نسخ العرض منسقاً للواتساب!');
+        }
+
+        // Preset 1: Ratio Sample (Land 600, Build 300 -> Ground 70%, First 60%, Annex 50% of First)
+        function loadRatioPresetSample() {
+            document.getElementById('clientName').value = 'أبو فهد';
+            document.getElementById('clientCity').value = 'الرياض';
+            document.getElementById('totalLandAreaInput').value = 600;
+            document.getElementById('allocatedBuildAreaInput').value = 300;
+            document.getElementById('projectScopeDesc').value = 'يتكون من دور ارضي و دور اول و ملحق علوي و بيت درج';
+            document.getElementById('quoteNoteInput').value = NOTES_DICT.no_tanks;
+            items = [
+                { id: 1, key: 'ground',  name: CATALOG.ground.ar,  calcMode: 'pct_allocated', pct: 70,  qty: 210, unit: 'م2', price: baseRate, linkedToBase: true },
+                { id: 2, key: 'first',   name: CATALOG.first.ar,   calcMode: 'pct_allocated', pct: 60,  qty: 180, unit: 'م2', price: baseRate, linkedToBase: true },
+                { id: 3, key: 'annex',   name: CATALOG.annex.ar,   calcMode: 'pct_first',     pct: 50,  qty: 90,  unit: 'م2', price: baseRate, linkedToBase: true },
+                { id: 4, key: 'stair',   name: CATALOG.stair.ar,   calcMode: 'direct',        pct: 100, qty: 25,  unit: 'م2', price: baseRate, linkedToBase: true },
+                { id: 5, key: 'parapet', name: CATALOG.parapet.ar, calcMode: 'direct',        pct: 100, qty: 55,  unit: 'م طولي', price: 200, linkedToBase: false },
+                { id: 6, key: 'fence',   name: CATALOG.fence.ar,   calcMode: 'direct',        pct: 100, qty: 95,  unit: 'م طولي', price: 500, linkedToBase: false },
+                { id: 7, key: 'yard',    name: CATALOG.yard.ar,    calcMode: 'rem_land',      pct: 100, qty: 390, unit: 'م2', price: 150, linkedToBase: false },
+                { id: 8, key: 'doors',   name: CATALOG.doors.ar,   calcMode: 'direct',        pct: 100, qty: 2,   unit: 'عدد', price: 3000, linkedToBase: false },
+                { id: 9, key: 'garage',  name: CATALOG.garage.ar,  calcMode: 'direct',        pct: 100, qty: 1,   unit: 'عدد', price: 6000, linkedToBase: false }
+            ];
+            recalculateDependentQuantities();
+            renderItemsList();
+            renderOutput();
+            showToast(uiLang === 'en' ? 'Loaded Ratio Sample (Land 600 / Build 300)' : 'تم تحميل مثال النسب (أرض 600 وبناء 300)');
+        }
+
+        // Preset 2: Direct Meters Sample (Mohammed - Al-Ahsa PDF)
+        function loadMohammedSample() {
+            document.getElementById('clientName').value = 'محمد';
+            document.getElementById('clientCity').value = 'الاحساء';
+            document.getElementById('totalLandAreaInput').value = 517.92;
+            document.getElementById('allocatedBuildAreaInput').value = 377.65;
+            document.getElementById('projectScopeDesc').value = 'يتكون من دور ارضي وبيت درج';
+            document.getElementById('quoteNoteInput').value = 'لا يشمل الخزانات سعة الخزانات غير موضحة في المخطط .';
+            setBaseRate(1199);
+            items = [
+                { id: 1, key: 'ground',  name: CATALOG.ground.ar,  calcMode: 'direct', pct: 100, qty: 377.65, unit: 'م2', price: 1199, linkedToBase: true },
+                { id: 2, key: 'parapet', name: CATALOG.parapet.ar, calcMode: 'direct', pct: 100, qty: 71.40,  unit: 'م طولي', price: 200, linkedToBase: false },
+                { id: 3, key: 'fence',   name: CATALOG.fence.ar,   calcMode: 'direct', pct: 100, qty: 90,     unit: 'م طولي', price: 500, linkedToBase: false },
+                { id: 4, key: 'yard',    name: CATALOG.yard.ar,    calcMode: 'direct', pct: 100, qty: 140.27, unit: 'م2', price: 150, linkedToBase: false },
+                { id: 5, key: 'doors',   name: CATALOG.doors.ar,   calcMode: 'direct', pct: 100, qty: 2,      unit: 'عدد', price: 3000, linkedToBase: false },
+                { id: 6, key: 'garage',  name: CATALOG.garage.ar,  calcMode: 'direct', pct: 100, qty: 1,      unit: 'عدد', price: 6000, linkedToBase: false }
+            ];
+            recalculateDependentQuantities();
+            renderItemsList();
+            renderOutput();
+            showToast(uiLang === 'en' ? 'Loaded Al-Ahsa direct input sample' : 'تم تحميل مثال عرض الأحساء (إدخال مباشر بالمتر)');
+        }
+
+        // Reset Blank Quote
+        function resetBlankQuote() {
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientCity').value = '';
+            document.getElementById('projectScopeDesc').value = 'يتكون من دور ارضي و دور اول و ملحق علوي';
+            items = [
+                { id: Date.now() + 1, key: 'ground', name: CATALOG.ground.ar, calcMode: 'pct_allocated', pct: 70, qty: 0, unit: 'م2', price: baseRate, linkedToBase: true },
+                { id: Date.now() + 2, key: 'first',  name: CATALOG.first.ar,  calcMode: 'pct_allocated', pct: 60, qty: 0, unit: 'م2', price: baseRate, linkedToBase: true },
+                { id: Date.now() + 3, key: 'annex',  name: CATALOG.annex.ar,  calcMode: 'pct_first',     pct: 50, qty: 0, unit: 'م2', price: baseRate, linkedToBase: true }
+            ];
+            recalculateDependentQuantities();
+            renderItemsList();
+            renderOutput();
+            showToast(uiLang === 'en' ? 'New quotation created' : 'تم فتح عرض جديد جاهز لحساب النسب أو الإدخال المباشر');
+        }
+
+        // LocalStorage Save / Load
+        function getSavedQuotes() {
+            try {
+                return JSON.parse(localStorage.getItem('superbox_free_quotes') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function updateSavedCountBadge() {
+            const badge = document.getElementById('savedCountBadge');
+            if (badge) badge.innerText = getSavedQuotes().length;
+        }
+
+        function saveCurrentQuote() {
+            const list = getSavedQuotes();
+            const clientName = document.getElementById('clientName').value.trim() || (uiLang === 'en' ? 'Unnamed Client' : 'عميل بدون اسم');
+            const city = document.getElementById('clientCity').value.trim();
+            const subTotal = items.reduce((s, i) => s + ((parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0)), 0);
+            const total = includeVat ? (subTotal * 1.15) : subTotal;
+
+            list.unshift({
+                id: Date.now(),
+                date: new Date().toLocaleString('en-US'),
+                clientName,
+                city,
+                baseRate,
+                includeVat,
+                totalLandArea,
+                allocatedBuildArea,
+                scopeDesc: document.getElementById('projectScopeDesc').value,
+                note: document.getElementById('quoteNoteInput').value,
+                items: JSON.parse(JSON.stringify(items)),
+                total
+            });
+
+            localStorage.setItem('superbox_free_quotes', JSON.stringify(list));
+            updateSavedCountBadge();
+            showToast(uiLang === 'en' ? `Saved quote "${clientName}"` : `تم حفظ عرض "${clientName}"`);
+        }
+
+        function toggleSavedQuotesModal() {
+            const modal = document.getElementById('savedQuotesModal');
+            if (modal.classList.contains('hidden')) {
+                renderSavedList();
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function renderSavedList() {
+            const list = getSavedQuotes();
+            const container = document.getElementById('savedQuotesList');
+            if (list.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 font-bold text-xs">${uiLang === 'en' ? 'No saved quotations yet' : 'لا توجد عروض محفوظة بعد'}</div>`;
+                return;
+            }
+            container.innerHTML = list.map(q => `
+                <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
+                    <div>
+                        <div class="font-black text-xs text-slate-900">${q.clientName} ${q.city ? `(${q.city})` : ''}</div>
+                        <div class="text-[11px] text-slate-500"><strong>${formatNum(q.total)} SAR</strong> | ${q.date}</div>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <button onclick="loadSavedQuote(${q.id})" class="bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded text-xs">${uiLang === 'en' ? 'Load' : 'فتح'}</button>
+                        <button onclick="deleteSavedQuote(${q.id})" class="bg-red-50 text-red-600 px-2 py-1 rounded text-xs"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadSavedQuote(id) {
+            const found = getSavedQuotes().find(q => q.id === id);
+            if (!found) return;
+            document.getElementById('clientName').value = found.clientName;
+            document.getElementById('clientCity').value = found.city || '';
+            document.getElementById('totalLandAreaInput').value = found.totalLandArea || 600;
+            document.getElementById('allocatedBuildAreaInput').value = found.allocatedBuildArea || 300;
+            document.getElementById('projectScopeDesc').value = found.scopeDesc || '';
+            document.getElementById('quoteNoteInput').value = found.note || '';
+            items = JSON.parse(JSON.stringify(found.items));
+            setBaseRate(found.baseRate || 1199);
+            setVatMode(Boolean(found.includeVat));
+            recalculateDependentQuantities();
+            renderItemsList();
+            renderOutput();
+            toggleSavedQuotesModal();
+            showToast(uiLang === 'en' ? `Loaded "${found.clientName}"` : `تم فتح عرض "${found.clientName}"`);
+        }
+
+        function deleteSavedQuote(id) {
+            const list = getSavedQuotes().filter(q => q.id !== id);
+            localStorage.setItem('superbox_free_quotes', JSON.stringify(list));
+            updateSavedCountBadge();
+            renderSavedList();
+        }
+    </script>
+</body>
+</html>
